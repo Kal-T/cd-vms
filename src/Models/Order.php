@@ -30,13 +30,13 @@ class Order
         WHERE orders.id = :id
     ";
         $stmt = $this->db->query($sql, ['id' => $id]);
-        return $stmt->fetch();
+        return $stmt->fetch(\PDO::FETCH_ASSOC);
     }
 
     public function getAllOrders()
     {
         $sql = "SELECT * FROM orders";
         $stmt = $this->db->query($sql);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC); 
     }
 }

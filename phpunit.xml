@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="bootstrap.php" colors="true" verbose="true">
+    <testsuites>
+        <testsuite name="Application Test Suite">
+            <directory>./tests</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <env name="DB_DSN" value="mysql:host=localhost;dbname=vms"/>
+        <env name="DB_USER" value="thiha"/>
+        <env name="DB_PASSWORD" value="thiha"/>
+    </php>
+</phpunit>

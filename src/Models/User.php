@@ -13,6 +13,13 @@ class User
         $this->db = $db;
     }
 
+    public function usernameExists($username)
+    {
+        $sql = "SELECT COUNT(*) FROM users WHERE username = :username";
+        $stmt = $this->db->query($sql, ['username' => $username]);
+        return $stmt->fetchColumn() > 0;
+    }
+
     public function getUserById($id)
     {
         $sql = "SELECT * FROM users WHERE id = :id";

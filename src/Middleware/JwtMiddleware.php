@@ -2,40 +2,74 @@
 
 namespace App\Middleware;
 
+use Exception;
 use Firebase\JWT\JWT;
-use Firebase\JWT\ExpiredException;
 use Firebase\JWT\Key;
 
 class JwtMiddleware
 {
     private $jwtKey;
 
-    public function __construct()
+    public function __construct($jwtKey)
     {
-        $this->jwtKey = $_ENV['JWT_KEY']; // Ensure this is set correctly
+        $this->jwtKey = $jwtKey;
     }
 
-    public function __invoke($request, $response, $next)
+    public function validateJwtCookie()
     {
-        $headers = $request->getHeaders();
-        if (!isset($headers['Authorization'][0])) {
-            return $response->withStatus(401)->write('Authorization header is missing');
+        $jwtToken = $_COOKIE['jwt'] ?? '';
+
+        if ($jwtToken) {
+            try {
+                $decoded = JWT::decode($jwtToken, new Key($this->jwtKey, 'HS256'));
+                $_SESSION['user_id'] = $decoded->sub;
+                $_SESSION['role'] = $decoded->role;
+            } catch (Exception $e) {
+                // Handle token errors
+                setcookie('jwt', '', time() - 3600, "/", "", false, true); // Clear the cookie
+                http_response_code(401);
+                echo 'Unauthorized: ' . $e->getMessage();
+                exit;
+            }
+        } else {
+            // No token, redirect to login
+            header('Location: /vms/login');
+            exit;
         }
+    }
 
-        $authHeader = $headers['Authorization'][0];
-        $token = str_replace('Bearer ', '', $authHeader);
+    public function validateJwtToken()
+    {
+        // $jwtToken = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        $jwtToken = $this->getAuthorizationHeader();
+        $jwtToken = str_replace('Bearer ', '', $jwtToken);
 
-        try {
-            // Decode the JWT token
-            $decoded = JWT::decode($token, new Key($this->jwtKey, 'HS256'));
-            $request = $request->withAttribute('user', $decoded);
-        } catch (ExpiredException $e) {
-            return $response->withStatus(401)->write('Token has expired');
-        } catch (\Exception $e) {
-            return $response->withStatus(401)->write('Invalid token');
+        if ($jwtToken) {
+            try {
+                $decoded = JWT::decode($jwtToken, new Key($this->jwtKey, 'HS256'));
+                $_SESSION['user_id'] = $decoded->sub;
+                $_SESSION['role'] = $decoded->role;
+            } catch (Exception $e) {
+                http_response_code(401);
+                echo json_encode(['error' => 'Unauthorized: ' . $e->getMessage()]);
+                exit;
+            }
+        } else {
+            http_response_code(401);
+            echo json_encode(['error' => 'Unauthorized: No token provided']);
+            exit;
         }
+    }
 
-        return $next($request, $response);
+    private function getAuthorizationHeader() {
+        if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            return $_SERVER['HTTP_AUTHORIZATION'];
+        } elseif (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+            return $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+        } elseif (function_exists('apache_request_headers')) {
+            $headers = apache_request_headers();
+            return isset($headers['Authorization']) ? $headers['Authorization'] : '';
+        }
+        return '';
     }
 }
-

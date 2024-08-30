@@ -8,44 +8,52 @@ use App\Helpers\ViewHelper;
 class TransactionsController
 {
     private $transactionModel;
+    private $viewHelper;
 
-    public function __construct(Transaction $transactionModel)
+    public function __construct(Transaction $transactionModel, ViewHelper $viewHelper)
     {
         $this->transactionModel = $transactionModel;
+        $this->viewHelper = $viewHelper;
     }
 
     public function listTransactions()
-    {
-        $transactions = $this->transactionModel->getAllTransactions();
-        
-        ViewHelper::render('transactions/list', ['transactions' => $transactions]);
-    }
+{
+    $transactions = $this->transactionModel->getAllTransactions();
+    $isApiRequest = strpos($_SERVER['REQUEST_URI'], '/vms/api') === 0;
 
-    public function viewTransaction($id)
-    {
-        $transaction = $this->transactionModel->getTransactionById($id);
-        
-        ViewHelper::render('transactions/view', ['transaction' => $transaction]);
+    if ($isApiRequest) {
+        // API response
+        $this->viewHelper->respondJson(['transactions' => $transactions]);
+    } else {
+        // Web response
+        $this->viewHelper->render('transactions/list', ['transactions' => $transactions]);
     }
+}
 
-    public function createTransactionForm()
-    {
-        ViewHelper::render('transactions/create');
-    }
+public function viewTransaction($id)
+{
+    $transaction = $this->transactionModel->getTransactionById($id);
+    $isApiRequest = strpos($_SERVER['REQUEST_URI'], '/vms/api') === 0;
 
-    public function createTransaction()
-    {
+    if ($transaction) {
+        if ($isApiRequest) {
+            // API response
+            $this->viewHelper->respondJson(['transaction' => $transaction]);
+        } else {
+            // Web response
+            $this->viewHelper->render('transactions/view', ['transaction' => $transaction]);
+        }
+    } else {
+        if ($isApiRequest) {
+            // API response
+            http_response_code(404);
+            $this->viewHelper->respondJson(['message' => 'Transaction not found']);
+        } else {
+            // Web response
+            http_response_code(404);
+            echo 'Transaction not found';
+        }
     }
+}
 
-    public function editTransactionForm($id)
-    {
-    }
-
-    public function editTransaction($id)
-    {
-    }
-
-    public function deleteTransaction($id)
-    {
-    }
 }

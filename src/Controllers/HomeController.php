@@ -9,6 +9,6 @@ class HomeController
     public function index()
     {
         // Render the default home page
-        ViewHelper::render('home/index');
+        $this->viewHelper->render('home/index');
     }
 }

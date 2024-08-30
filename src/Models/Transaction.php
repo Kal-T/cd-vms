@@ -16,7 +16,7 @@ class Transaction
     public function getAllTransactions()
     {
         $stmt = $this->db->query("SELECT * FROM transactions");
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     public function createTransaction(array $data)
@@ -30,6 +30,6 @@ class Transaction
     {
         $sql = "SELECT * FROM transactions WHERE id = :id";
         $stmt = $this->db->query($sql, ['id' => $id]);
-        return $stmt->fetch();
+        return $stmt->fetch(\PDO::FETCH_ASSOC);
     }
 }
